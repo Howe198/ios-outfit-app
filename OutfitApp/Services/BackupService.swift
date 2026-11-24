@@ -383,11 +383,11 @@ final class BackupService {
         try context.save()
 
         // 6. 回读核对数量
-        let itemCount = try context.fetchCount(FetchDescriptor<ClothingItem>())
-        let outfitCount = try context.fetchCount(FetchDescriptor<Outfit>())
-        let logCount = try context.fetchCount(FetchDescriptor<WearLog>())
-        let inspirationCount = try context.fetchCount(FetchDescriptor<Inspiration>())
-        let ruleCount = try context.fetchCount(FetchDescriptor<StyleRule>())
+        let itemCount = try context.fetch(FetchDescriptor<ClothingItem>()).count
+        let outfitCount = try context.fetch(FetchDescriptor<Outfit>()).count
+        let logCount = try context.fetch(FetchDescriptor<WearLog>()).count
+        let inspirationCount = try context.fetch(FetchDescriptor<Inspiration>()).count
+        let ruleCount = try context.fetch(FetchDescriptor<StyleRule>()).count
 
         guard itemCount == payload.items.count,
               outfitCount == payload.outfits.count,
