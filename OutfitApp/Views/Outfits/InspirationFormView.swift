@@ -162,7 +162,7 @@ struct InspirationFormView: View {
         }
 
         var file = existingFile ?? ""
-        if let photoData {
+        if let photoData = photoData {
             do {
                 let savedName = try ImageStore.shared.save(data: photoData)
                 if !file.isEmpty, file != savedName {

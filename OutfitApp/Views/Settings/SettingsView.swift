@@ -42,7 +42,7 @@ struct SettingsView: View {
                     Label("导出备份（JSON + 图片，单个 zip）", systemImage: "square.and.arrow.up")
                 }
 
-                if let exportedURL {
+                if let exportedURL = exportedURL {
                     ShareLink(item: exportedURL) {
                         Label("分享刚导出的备份文件", systemImage: "paperplane")
                     }
@@ -100,7 +100,7 @@ struct SettingsView: View {
         }
         .confirmationDialog("导入会覆盖当前全部数据", isPresented: $showImportConfirm, titleVisibility: .visible) {
             Button("覆盖并恢复", role: .destructive) {
-                if let pendingImport {
+                if let pendingImport = pendingImport {
                     performImport(pendingImport)
                 }
             }

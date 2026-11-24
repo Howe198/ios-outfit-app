@@ -166,7 +166,7 @@ private struct DayDetailView: View {
                     Text(DateText.full(date))
                         .font(.title3).bold()
 
-                    if let log {
+                    if let log = log {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(log.outfitName)
                                 .font(.subheadline)
@@ -237,7 +237,7 @@ private struct DayDetailView: View {
             }
             .confirmationDialog("删除这天的记录？", isPresented: $showDelete, titleVisibility: .visible) {
                 Button("删除", role: .destructive) {
-                    if let log {
+                    if let log = log {
                         context.delete(log)
                     }
                     dismiss()

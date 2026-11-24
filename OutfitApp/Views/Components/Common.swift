@@ -40,7 +40,7 @@ struct ItemImage: View {
         ZStack {
             Color(.tertiarySystemFill)
 
-            if let image {
+            if let image = image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()

@@ -233,7 +233,7 @@ struct RuleFormView: View {
     }
 
     private func loadInitial() {
-        if let editingRule, title.isEmpty {
+        if let editingRule = editingRule, title.isEmpty {
             title = editingRule.title
             note = editingRule.note
             kind = editingRule.kind
@@ -259,7 +259,7 @@ struct RuleFormView: View {
             return
         }
 
-        if let editingRule {
+        if let editingRule = editingRule {
             editingRule.title = trimmed
             editingRule.note = note
             editingRule.kindValue = kind.rawValue
