@@ -1,0 +1,43 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+
+# 依赖管理（本项目不引入第三方依赖，保留以防误加）
+Pods/
+Carthage/Build/
+
+# 本地备份、导出文件与个人数据，绝不入库
+Backups/
+*.zip
+*.outfitbackup
+backup*.json
+!docs/examples/*.json
+
+# 密钥与配置（本项目不应存在任何密钥，这里是兜底）
+*.p12
+*.mobileprovision
+*.cer
+*.key
+*.pem
+.env
+Secrets.plist
