@@ -14,8 +14,8 @@ struct WardrobeView: View {
 
     private var filtered: [ClothingItem] {
         items.filter { item in
-            if let category, item.category != category { return false }
-            if let status, item.status != status { return false }
+            if let category = category, item.category != category { return false }
+            if let status = status, item.status != status { return false }
             let keyword = search.trimmingCharacters(in: .whitespaces)
             if !keyword.isEmpty {
                 let matched = item.name.localizedCaseInsensitiveContains(keyword)

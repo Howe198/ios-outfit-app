@@ -20,7 +20,7 @@ struct TodayView: View {
     private var todayLog: WearLog? { logs.first { Calendar.current.isDateInToday($0.date) } }
 
     private var pageItems: [RecommendedOutfit] {
-        guard let result else { return [] }
+        guard let result = result else { return [] }
         let start = page * 3
         guard start < result.outfits.count else { return [] }
         return Array(result.outfits[start..<min(start + 3, result.outfits.count)])
@@ -32,7 +32,7 @@ struct TodayView: View {
         ScrollView {
             VStack(spacing: 16) {
                 headerCard
-                if let todayLog {
+                if let todayLog = todayLog {
                     recordedCard(todayLog)
                 }
                 recommendationSection
@@ -144,7 +144,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private var recommendationSection: some View {
-        if let result {
+        if let result = result {
             if result.outfits.isEmpty {
                 issueCard(result.issue ?? "当前条件下没有可用的组合。")
             } else {

@@ -59,7 +59,7 @@ struct PhotoInput: View {
             }
         }
         .onChange(of: pickerItem) { _, newItem in
-            guard let newItem else { return }
+            guard let newItem = newItem else { return }
             Task {
                 loadFailed = false
                 if let loaded = try? await newItem.loadTransferable(type: Data.self) {
@@ -83,11 +83,11 @@ struct PhotoInput: View {
     @ViewBuilder
     private var preview: some View {
         Group {
-            if let data, let uiImage = UIImage(data: data) {
+            if let data = data, let uiImage = UIImage(data: data) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
-            } else if let existingFile, !existingFile.isEmpty {
+            } else if let existingFile = existingFile, !existingFile.isEmpty {
                 ItemImage(fileName: existingFile, maxPixel: 800)
             } else {
                 ZStack {
