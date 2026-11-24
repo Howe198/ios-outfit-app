@@ -4,6 +4,8 @@
 
 全程零费用：免费 Xcode + SwiftUI + SwiftData + 本机存储，不接任何付费服务，不上架 App Store，不上传任何照片或数据。
 
+> **当前状态（2026-11-24）**：工程由 Windows 环境生成，**尚未在 Mac / Xcode 上编译验证**。首次打开若出现编译错误，请把报错文件与行号贴回，优先修通再谈验收。功能范围与逐项进度见 `PROGRESS.md`。
+
 ---
 
 ## 1. 现在能做什么（P0 六项）
@@ -53,7 +55,7 @@ xcodebuild -project OutfitApp.xcodeproj \
   build
 ```
 
-只需要模拟器验证时，把 `-destination` 换成 `'platform=iOS Simulator,name=iPhone 16'`。模拟器没有相机，照片只能从相册选。
+只需要模拟器验证时，把 `-destination` 换成 `'platform=iOS Simulator,name=iPhone 16'`（Xcode 15 用 `iPhone 15`）。模拟器没有相机，照片只能从相册选。
 
 ---
 
