@@ -41,7 +41,7 @@ enum RecommendationEngine {
 
         let bandSeasons = Set(band.seasons.map(\.rawValue))
         var usable = active.filter { item in
-            guard !Set(item.seasonValues).isDisjoint(with: bandSeasons) else { return false }
+            guard !Set(item.seasonsValue).isDisjoint(with: bandSeasons) else { return false }
             if let low = item.tempMin, temperature < low - 3 { return false }
             if let high = item.tempMax, temperature > high + 3 { return false }
             if band == .hot && item.thickness == .thick { return false }
@@ -228,7 +228,7 @@ enum RecommendationEngine {
         case .occasion:
             return item.occasionsValue.contains(rule.value)
         case .season:
-            return item.seasonValues.contains(rule.value)
+            return item.seasonsValue.contains(rule.value)
         case .thickness:
             return item.thicknessValue == rule.value
         case .item:
