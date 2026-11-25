@@ -3,19 +3,18 @@ name: iOS Build (unsigned IPA)
 # 云端编译：在 GitHub 的 macOS 机器上把 OutfitApp 编成未签名 IPA，
 # 下载后在 Windows 上用 SideStore 以免费 Apple ID 签名装到 iPhone。
 # 不需要付费开发者账号，不上架 App Store。
+#
+# 省额度版（v2）：
+# - 只手动触发（Actions 页点 Run workflow），推代码不再自动编译，避免每次合并都烧 macOS 分钟。
+# - 单次任务最长 20 分钟，卡住会自动停，不会跑满 6 小时把额度烧光。
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "OutfitApp/**"
-      - "OutfitApp.xcodeproj/**"
-      - ".github/workflows/ios-build.yml"
 
 jobs:
   build:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
