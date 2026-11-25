@@ -1,0 +1,44 @@
+name: iOS Build (unsigned IPA)
+
+# 云端编译：在 GitHub 的 macOS 机器上把 OutfitApp 编成未签名 IPA，
+# 下载后在 Windows 上用 SideStore 以免费 Apple ID 签名装到 iPhone。
+# 不需要付费开发者账号，不上架 App Store。
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "OutfitApp/**"
+      - "OutfitApp.xcodeproj/**"
+      - ".github/workflows/ios-build.yml"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (no code signing)
+        run: |
+          xcodebuild build \
+            -project OutfitApp.xcodeproj \
+            -scheme OutfitApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -R "build/Build/Products/Release-iphoneos/OutfitApp.app" Payload/
+          zip -r OutfitApp-unsigned.ipa Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OutfitApp-unsigned-ipa
+          path: OutfitApp-unsigned.ipa
+          retention-days: 14
