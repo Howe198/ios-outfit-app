@@ -170,11 +170,20 @@ enum GarmentPipeline {
         if let lowerRect = joints.lowerRect(in: sourceExtent),
            let cutoutImage = cutout(source: sourceCIImage, mask: personMask, region: lowerRect, extent: sourceExtent, context: ciContext),
            hasContent(cutoutImage) {
-            let guess = await ClothingVision.recognize(cutoutImage, categoryHint: .bottom)
+            var lowerImage = cutoutImage
+            var guess = await ClothingVision.recognize(cutoutImage, categoryHint: .bottom)
+            // 短裤/裙：把区域收膝点，尽量不把小腿皮肤带进结果图。
+            if isShortOrSkirt(guess.matchedLabel),
+               let kneeRect = joints.lowerRect(in: sourceExtent, stopAtKnee: true),
+               let kneeCutout = cutout(source: sourceCIImage, mask: personMask, region: kneeRect, extent: sourceExtent, context: ciContext),
+               hasContent(kneeCutout) {
+                lowerImage = kneeCutout
+                guess = await ClothingVision.recognize(kneeCutout, categoryHint: .bottom)
+            }
             let category = resolvedCategory(guess.category, prior: .bottom)
             candidates.append(
                 GarmentCandidate(
-                    image: flatten(cutoutImage, part: .lower),
+                    image: flatten(lowerImage, part: .lower),
                     category: category,
                     colorName: guess.colorName,
                     part: .lower
@@ -204,6 +213,11 @@ enum GarmentPipeline {
         default:
             return guessed
         }
+    }
+
+    private static func isShortOrSkirt(_ label: String?) -> Bool {
+        guard let label = label?.lowercased() else { return false }
+        return label.contains("short") || label.contains("skirt") || label.contains("skort")
     }
 
     // MARK: - 遮罩与裁剪
@@ -490,17 +504,20 @@ private struct Joints {
               let rightHip = point(.rightHip) ?? point(.root) else { return nil }
         let xMin = min(leftShoulder.x, rightShoulder.x, leftHip.x, rightHip.x) - 0.08
         let xMax = max(leftShoulder.x, rightShoulder.x, leftHip.x, rightHip.x) + 0.08
-        let top = neck.y + 0.04
+        let top = neck.y - 0.02
         let bottom = min(leftHip.y, rightHip.y) - 0.06
         return normalizedRect(xMin: xMin, xMax: xMax, yBottom: bottom, yTop: top, extent: extent)
     }
 
-    func lowerRect(in extent: CGRect) -> CGRect? {
+    func lowerRect(in extent: CGRect, stopAtKnee: Bool = false) -> CGRect? {
         guard let leftHip = point(.leftHip) ?? point(.root),
               let rightHip = point(.rightHip) ?? point(.root) else { return nil }
         let knees = [point(.leftKnee), point(.rightKnee)].compactMap { $0 }
         let ankles = [point(.leftAnkle), point(.rightAnkle)].compactMap { $0 }
-        let bottomPoints = ankles.isEmpty ? knees : ankles
+        var bottomPoints = ankles.isEmpty ? knees : ankles
+        if stopAtKnee, !knees.isEmpty {
+            bottomPoints = knees
+        }
         guard let bottom = bottomPoints.min(by: { $0.y < $1.y }) else { return nil }
 
         let xMin = min(leftHip.x, rightHip.x, bottom.x) - 0.1
@@ -526,7 +543,7 @@ private struct Joints {
             xMin: xMin,
             xMax: xMax,
             yBottom: bottom.y - 0.03,
-            yTop: neck.y + 0.03,
+            yTop: neck.y - 0.02,
             extent: extent
         )
     }
