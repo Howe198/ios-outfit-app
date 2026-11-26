@@ -29,7 +29,7 @@
 	B10000000000000000000020 /* OutfitTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000020 /* OutfitTabView.swift */; };
 	B10000000000000000000021 /* OutfitEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000021 /* OutfitEditorView.swift */; };
 	B10000000000000000000022 /* InspirationFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000022 /* InspirationFormView.swift */; };
-	B10000000000000000000023 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000023 /* HistoryView.swift */; };
+	B10000000000000000000033 /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000033 /* MyView.swift */; };
 	B10000000000000000000024 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000024 /* SettingsView.swift */; };
 	B10000000000000000000025 /* RulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000025 /* RulesView.swift */; };
 	B10000000000000000000026 /* VocabularyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000026 /* VocabularyView.swift */; };
@@ -59,7 +59,7 @@
 	F10000000000000000000020 /* OutfitTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitTabView.swift; sourceTree = "<group>"; };
 	F10000000000000000000021 /* OutfitEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitEditorView.swift; sourceTree = "<group>"; };
 	F10000000000000000000022 /* InspirationFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationFormView.swift; sourceTree = "<group>"; };
-	F10000000000000000000023 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+	F10000000000000000000033 /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 	F10000000000000000000024 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 	F10000000000000000000025 /* RulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesView.swift; sourceTree = "<group>"; };
 	F10000000000000000000026 /* VocabularyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyView.swift; sourceTree = "<group>"; };
@@ -138,7 +138,7 @@
 		C10000000000000000000008 /* Today */,
 		C10000000000000000000009 /* Wardrobe */,
 		C10000000000000000000010 /* Outfits */,
-		C10000000000000000000011 /* History */,
+		C10000000000000000000011 /* My */,
 		C10000000000000000000012 /* Settings */,
 		);
 		path = Views;
@@ -181,12 +181,12 @@
 		path = Outfits;
 		sourceTree = "<group>";
 	};
-	C10000000000000000000011 /* History */ = {
+	C10000000000000000000011 /* My */ = {
 		isa = PBXGroup;
 		children = (
-		F10000000000000000000023 /* HistoryView.swift */,
+		F10000000000000000000033 /* MyView.swift */,
 		);
-		path = History;
+		path = My;
 		sourceTree = "<group>";
 	};
 	C10000000000000000000012 /* Settings */ = {
@@ -308,7 +308,7 @@
 		B10000000000000000000020 /* OutfitTabView.swift in Sources */,
 		B10000000000000000000021 /* OutfitEditorView.swift in Sources */,
 		B10000000000000000000022 /* InspirationFormView.swift in Sources */,
-		B10000000000000000000023 /* HistoryView.swift in Sources */,
+		B10000000000000000000033 /* MyView.swift in Sources */,
 		B10000000000000000000024 /* SettingsView.swift in Sources */,
 		B10000000000000000000025 /* RulesView.swift in Sources */,
 		B10000000000000000000026 /* VocabularyView.swift in Sources */,
