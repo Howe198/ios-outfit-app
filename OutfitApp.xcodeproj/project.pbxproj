@@ -38,6 +38,7 @@
 	B10000000000000000000030 /* InspirationLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000031 /* InspirationLibrary.swift */; };
 	B10000000000000000000031 /* InspirationSamples in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000030 /* InspirationSamples */; };
 	B10000000000000000000032 /* ClothingVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000032 /* ClothingVision.swift */; };
+		B10000000000000000000034 /* GarmentPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000034 /* GarmentPipeline.swift */; };
 	/* End PBXBuildFile section */
 
 	/* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 	F10000000000000000000031 /* InspirationLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationLibrary.swift; sourceTree = "<group>"; };
 	F10000000000000000000032 /* ClothingVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingVision.swift; sourceTree = "<group>"; };
 	F10000000000000000000028 /* OutfitApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutfitApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+			F10000000000000000000034 /* GarmentPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarmentPipeline.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 	/* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +140,7 @@
 		F10000000000000000000029 /* WeatherService.swift */,
 		F10000000000000000000031 /* InspirationLibrary.swift */,
 		F10000000000000000000032 /* ClothingVision.swift */,
+		F10000000000000000000034 /* GarmentPipeline.swift */,
 		);
 		path = Services;
 		sourceTree = "<group>";
@@ -328,6 +331,7 @@
 		B10000000000000000000029 /* WeatherService.swift in Sources */,
 		B10000000000000000000030 /* InspirationLibrary.swift in Sources */,
 		B10000000000000000000032 /* ClothingVision.swift in Sources */,
+		B10000000000000000000034 /* GarmentPipeline.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
