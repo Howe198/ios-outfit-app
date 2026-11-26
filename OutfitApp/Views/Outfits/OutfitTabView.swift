@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// 搭配页：我的搭配 / 灵感收藏 两个子页（阶段3 页面清单）。
+/// 搭配页：我的搭配 / 搭配灵感（内置示例）/ 灵感收藏（自己的收藏）。
 struct OutfitTabView: View {
     @State private var segment = 0
 
@@ -9,7 +9,8 @@ struct OutfitTabView: View {
         VStack(spacing: 0) {
             Picker("内容", selection: $segment) {
                 Text("我的搭配").tag(0)
-                Text("灵感收藏").tag(1)
+                Text("搭配灵感").tag(1)
+                Text("灵感收藏").tag(2)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
@@ -17,6 +18,8 @@ struct OutfitTabView: View {
 
             if segment == 0 {
                 OutfitListSection()
+            } else if segment == 1 {
+                InspirationGallerySection()
             } else {
                 InspirationListSection()
             }
@@ -24,6 +27,195 @@ struct OutfitTabView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("搭配")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - 搭配灵感（内置示例）
+
+private struct InspirationGallerySection: View {
+    @State private var selected: StyleSample?
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("内置的日常搭配示例，只作灵感参考，可离线查看；不带货、不抓取任何平台内容。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                LazyVGrid(columns: columns, spacing: 12) {
+                    ForEach(InspirationLibrary.all) { sample in
+                        Button {
+                            selected = sample
+                        } label: {
+                            StyleSampleCard(sample: sample)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .sheet(item: $selected) { sample in
+            StyleSampleDetailView(sample: sample)
+        }
+    }
+}
+
+/// 今日页与搭配页共用的灵感网格（只读）。
+struct InspirationGalleryView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var selected: StyleSample?
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("内置的日常搭配示例，只作灵感参考，可离线查看；不带货、不抓取任何平台内容。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(InspirationLibrary.all) { sample in
+                            Button {
+                                selected = sample
+                            } label: {
+                                StyleSampleCard(sample: sample)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("搭配灵感")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+            .sheet(item: $selected) { sample in
+                StyleSampleDetailView(sample: sample)
+            }
+        }
+    }
+}
+
+struct StyleSampleCard: View {
+    let sample: StyleSample
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .topLeading) {
+                StyleSampleImage(sample: sample)
+                    .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                Text("灵感")
+                    .font(.caption2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(8)
+            }
+
+            Text(sample.title)
+                .font(.subheadline).bold()
+                .lineLimit(1)
+
+            HStack(spacing: 6) {
+                Text(sample.occasion)
+                Text(sample.tempText)
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+
+            Text(sample.note)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding(10)
+        .background(
+            Color(.secondarySystemGroupedBackground),
+            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+        )
+    }
+}
+
+struct StyleSampleImage: View {
+    let sample: StyleSample
+
+    var body: some View {
+        Group {
+            if let image = InspirationLibrary.image(for: sample) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                ZStack {
+                    Color(.tertiarySystemFill)
+                    Image(systemName: "photo")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+}
+
+struct StyleSampleDetailView: View {
+    let sample: StyleSample
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    StyleSampleImage(sample: sample)
+                        .aspectRatio(1, contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    Text(sample.title)
+                        .font(.title3).bold()
+
+                    HStack(spacing: 10) {
+                        Text(sample.occasion)
+                        Text(sample.tempText)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    Text(sample.note)
+                        .font(.subheadline)
+
+                    Text("这是内置示例，仅作灵感参考；不能一键穿上，也不代表你已有这些衣物。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("灵感详情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
     }
 }
 
