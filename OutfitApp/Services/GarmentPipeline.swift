@@ -471,7 +471,7 @@ enum GarmentPipeline {
         }
     }
 
-    private static func normalizedImage(_ image: UIImage) -> UIImage {
+    static func normalizedImage(_ image: UIImage) -> UIImage {
         guard image.imageOrientation != .up else { return image }
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = image.scale

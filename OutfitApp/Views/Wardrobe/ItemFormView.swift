@@ -365,11 +365,12 @@ struct ItemFormView: View {
     private func beginPhotoFlow(_ image: UIImage) {
         analysisToken += 1
         let token = analysisToken
-        originalImage = image
+        let normalized = GarmentPipeline.normalizedImage(image)
+        originalImage = normalized
         preparedImage = nil
         sourceIsLowRes = max(
-            GarmentPipeline.pixelSize(of: image).width,
-            GarmentPipeline.pixelSize(of: image).height
+            GarmentPipeline.pixelSize(of: normalized).width,
+            GarmentPipeline.pixelSize(of: normalized).height
         ) < 1600
         enhanceLowRes = false
         garments = []
@@ -381,16 +382,16 @@ struct ItemFormView: View {
         pipelineState = .detecting
 
         Task {
-            let boxes = await GarmentPipeline.detectPersons(in: image)
+            let boxes = await GarmentPipeline.detectPersons(in: normalized)
             await MainActor.run {
                 guard token == analysisToken else { return }
                 if boxes.count > 1 {
-                    personImage = image
+                    personImage = normalized
                     personBoxes = boxes
                     pipelineState = .idle
                     showPersonPicker = true
                 } else {
-                    processPhoto(image, token: token)
+                    processPhoto(normalized, token: token)
                 }
             }
         }
