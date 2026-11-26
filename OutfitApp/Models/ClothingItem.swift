@@ -17,6 +17,8 @@ final class ClothingItem {
     var statusValue: String
     var note: String
     var imageFile: String
+    /// 「换图」时保留的上一张原图文件名；用户可在详情页恢复。为空表示没有备份。
+    var previousImageFile: String?
     var createdAt: Date
 
     init(
@@ -32,6 +34,7 @@ final class ClothingItem {
         status: ItemStatus = .active,
         note: String = "",
         imageFile: String,
+        previousImageFile: String? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -46,6 +49,7 @@ final class ClothingItem {
         self.statusValue = status.rawValue
         self.note = note
         self.imageFile = imageFile
+        self.previousImageFile = previousImageFile
         self.createdAt = createdAt
     }
 
