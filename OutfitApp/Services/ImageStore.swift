@@ -49,6 +49,18 @@ final class ImageStore {
         return fileName
     }
 
+    /// 保存抠图结果：透明 PNG，最长边 1000px，尽量控制体积。
+    @discardableResult
+    func saveCutout(_ image: UIImage, name: String? = nil) throws -> String {
+        prepare()
+        guard let normalized = Self.normalizedPNG(image, maxSide: 1000) else {
+            throw BackupError.imageUnreadable
+        }
+        let fileName = name ?? (UUID().uuidString + ".png")
+        try normalized.write(to: url(for: fileName), options: .atomic)
+        return fileName
+    }
+
     /// 从沙盒原文件直接拷入（导入备份用，避免二次压缩）
     func copyImage(from source: URL, named name: String) throws {
         prepare()
@@ -105,5 +117,21 @@ final class ImageStore {
             }
         }
         return target.jpegData(compressionQuality: quality)
+    }
+
+    static func normalizedPNG(_ image: UIImage, maxSide: CGFloat = 1000) -> Data? {
+        guard image.size.width > 0, image.size.height > 0 else { return nil }
+        let longest = max(image.size.width, image.size.height)
+        let scale = min(1, maxSide / longest)
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        let target = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+        return target.pngData()
     }
 }

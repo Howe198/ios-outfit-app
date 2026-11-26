@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// 新增 / 编辑衣物。字段顺序按附录A：照片 → 名称 → 品类 → 主色 → 季节 → 厚度 → 场合 → 温度 → 状态 → 备注。
 struct ItemFormView: View {
@@ -28,6 +29,20 @@ struct ItemFormView: View {
     @State private var tempMax = 25
     @State private var message: String?
 
+    @State private var cutout: UIImage?
+    @State private var cutoutState: CutoutState = .idle
+    @State private var useCutout = true
+    @State private var recognitionNote: String?
+    @State private var isRecognizing = false
+    @State private var analysisToken = 0
+
+    private enum CutoutState {
+        case idle
+        case processing
+        case ready
+        case failed
+    }
+
     private var title: String {
         if case .edit = mode { return "编辑衣物" }
         return "新增衣物"
@@ -43,7 +58,53 @@ struct ItemFormView: View {
                     PhotoInput(data: $photoData, existingFile: $existingFile)
                 }
 
-                Section("基本信息") {
+                if cutoutState != .idle {
+                    Section {
+                        switch cutoutState {
+                        case .processing:
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("正在去背景…")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        case .ready:
+                            if let cutout = cutout {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ZStack {
+                                        Color(.tertiarySystemFill)
+                                        Image(uiImage: cutout)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .padding(6)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 180)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                    Toggle("使用去背景后的图片", isOn: $useCutout)
+                                    Text("已自动去背景，只保留衣服本身，保存为透明 PNG。不满意可关掉开关，保留原图。")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        case .failed:
+                            Text("这张图没抠出衣服，已保留原图，不影响继续填写和保存。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        case .idle:
+                            EmptyView()
+                        }
+                    } header: {
+                        Text("自动去背景（本机 Vision）")
+                    } footer: {
+                        Text("抠图只在本机完成，照片不上传；失败时保留原图。")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
+                Section {
                     TextField("名称，如：藏青通勤西裤", text: $name)
 
                     Picker("品类", selection: $category) {
@@ -69,6 +130,19 @@ struct ItemFormView: View {
                             Text(option.rawValue).tag(option)
                         }
                     }
+                } header: {
+                    Text("基本信息")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("自动识别不一定准确，请自行修改。")
+                        if isRecognizing {
+                            Text("正在识别衣物…")
+                        }
+                        if let recognitionNote = recognitionNote {
+                            Text(recognitionNote)
+                        }
+                    }
+                    .font(.caption)
                 }
 
                 Section("季节（至少选一个）") {
@@ -106,6 +180,10 @@ struct ItemFormView: View {
                 }
             }
             .onAppear(perform: loadExisting)
+            .onChange(of: photoData) { _, newValue in
+                guard let data = newValue, let image = UIImage(data: data) else { return }
+                analyze(image)
+            }
             .alert("还不能保存", isPresented: alertBinding) {
                 Button("好", role: .cancel) {}
             } message: {
@@ -132,6 +210,53 @@ struct ItemFormView: View {
         }
     }
 
+    /// 选完照片后在本机跑识别与抠图；任何一步失败都不影响手动录入。
+    private func analyze(_ image: UIImage) {
+        analysisToken += 1
+        let token = analysisToken
+        isRecognizing = true
+        recognitionNote = nil
+        cutout = nil
+        cutoutState = .processing
+        useCutout = true
+
+        Task {
+            let guess = await ClothingVision.recognize(image)
+            let cut = await ClothingVision.removeBackground(from: image)
+            await MainActor.run {
+                guard token == analysisToken else { return }
+                applyGuess(guess)
+                cutout = cut
+                cutoutState = cut == nil ? .failed : .ready
+                useCutout = cut != nil
+                isRecognizing = false
+            }
+        }
+    }
+
+    private func applyGuess(_ guess: ClothingGuess) {
+        var parts: [String] = []
+        if let category = guess.category {
+            self.category = category
+            parts.append(category.rawValue)
+        }
+        if let colorName = guess.colorName, colorOptions.contains(colorName) {
+            primaryColor = colorName
+            parts.append(colorName)
+        }
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           let category = guess.category,
+           let colorName = guess.colorName {
+            name = "\(colorName)色\(category.rawValue)"
+        }
+
+        if parts.isEmpty {
+            recognitionNote = "没识别出品类和主色，请手动选择。"
+        } else {
+            recognitionNote = "已按识别预填：\(parts.joined(separator: " · "))。"
+        }
+    }
+
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
@@ -148,17 +273,27 @@ struct ItemFormView: View {
         }
 
         var file = existingFile ?? ""
-        if let photoData = photoData {
+        var savedName: String?
+        if useCutout, let cutout = cutout {
             do {
-                let savedName = try ImageStore.shared.save(data: photoData)
-                if !file.isEmpty, file != savedName {
-                    ImageStore.shared.delete(named: file)
-                }
-                file = savedName
+                savedName = try ImageStore.shared.saveCutout(cutout)
             } catch {
                 message = error.localizedDescription
                 return
             }
+        } else if let photoData = photoData {
+            do {
+                savedName = try ImageStore.shared.save(data: photoData)
+            } catch {
+                message = error.localizedDescription
+                return
+            }
+        }
+        if let savedName = savedName {
+            if !file.isEmpty, file != savedName {
+                ImageStore.shared.delete(named: file)
+            }
+            file = savedName
         }
         guard !file.isEmpty else {
             message = "请先拍照或从相册选一张照片，图片是必填项。"
