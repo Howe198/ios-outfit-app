@@ -36,8 +36,8 @@ private struct InspirationGallerySection: View {
     @State private var selected: StyleSample?
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(minimum: 0), spacing: 12),
+        GridItem(.flexible(minimum: 0), spacing: 12)
     ]
 
     var body: some View {
@@ -58,7 +58,9 @@ private struct InspirationGallerySection: View {
                     }
                 }
             }
-            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
         }
         .sheet(item: $selected) { sample in
             StyleSampleDetailView(sample: sample)
@@ -72,8 +74,8 @@ struct InspirationGalleryView: View {
     @State private var selected: StyleSample?
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(minimum: 0), spacing: 12),
+        GridItem(.flexible(minimum: 0), spacing: 12)
     ]
 
     var body: some View {
@@ -95,7 +97,9 @@ struct InspirationGalleryView: View {
                         }
                     }
                 }
-                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("搭配灵感")
@@ -118,9 +122,13 @@ struct StyleSampleCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .topLeading) {
-                StyleSampleImage(sample: sample)
+                Rectangle()
+                    .fill(Color(.tertiarySystemFill))
                     .aspectRatio(3.0 / 4.0, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
+                    .overlay {
+                        StyleSampleImage(sample: sample)
+                    }
+                    .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 Text("灵感")
@@ -134,6 +142,7 @@ struct StyleSampleCard: View {
             Text(sample.title)
                 .font(.subheadline).bold()
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 6) {
                 Text(sample.occasion)
@@ -141,12 +150,15 @@ struct StyleSampleCard: View {
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(sample.note)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .background(
             Color(.secondarySystemGroupedBackground),
