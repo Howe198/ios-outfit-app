@@ -63,6 +63,8 @@ struct ItemRecord: Codable {
     var status: String
     var note: String
     var imageFile: String
+    /// 兼容旧备份：旧文件没有这个键，解码为 nil。
+    var previousImageFile: String?
     var createdAt: Date
 }
 
@@ -146,6 +148,7 @@ final class BackupService {
                     status: item.statusValue,
                     note: item.note,
                     imageFile: item.imageFile,
+                    previousImageFile: item.previousImageFile,
                     createdAt: item.createdAt
                 )
             },
@@ -218,7 +221,10 @@ final class BackupService {
             entries.append(StoreZip.Entry(name: "images/" + fileName, data: data))
         }
 
-        for item in items { appendImage(item.imageFile) }
+        for item in items {
+            appendImage(item.imageFile)
+            if let previous = item.previousImageFile { appendImage(previous) }
+        }
         for inspiration in inspirations { appendImage(inspiration.imageFile) }
 
         let archive = StoreZip.make(entries: entries)
@@ -297,6 +303,9 @@ final class BackupService {
 
         // 5. 写回记录
         for record in payload.items {
+            let previousFile = record.previousImageFile.flatMap {
+                ImageStore.shared.exists(named: $0) ? $0 : nil
+            }
             let item = ClothingItem(
                 id: itemMap[record.id] ?? UUID(),
                 name: record.name,
@@ -310,6 +319,7 @@ final class BackupService {
                 status: ItemStatus(rawValue: record.status) ?? .active,
                 note: record.note,
                 imageFile: record.imageFile,
+                previousImageFile: previousFile,
                 createdAt: record.createdAt
             )
             context.insert(item)
