@@ -1,13 +1,156 @@
 import SwiftUI
 import SwiftData
 
-/// 我的：设置与导出备份入口 + 穿搭记录（按日期倒序的列表，点进可改备注 / 删记录）。
+private struct CategoryCount: Identifiable {
+    let category: ItemCategory
+    let count: Int
+    var id: String { category.rawValue }
+}
+
+private struct WornEntry: Identifiable {
+    let item: ClothingItem
+    let count: Int
+    var id: UUID { item.id }
+}
+
+/// 我的：偏好设置、本地统计、设置与导出入口 + 穿搭记录（按日期倒序的列表，点进可改备注 / 删记录）。
 struct MyView: View {
     @Query(sort: \WearLog.date, order: .reverse) private var logs: [WearLog]
     @Query private var items: [ClothingItem]
 
+    @AppStorage("settings.temperatureUnit") private var temperatureUnitRaw = TemperatureUnit.celsius.rawValue
+    @AppStorage("settings.inspirationWeatherFirst") private var inspirationWeatherFirst = true
+
+    private var temperatureUnit: TemperatureUnit {
+        TemperatureUnit(rawValue: temperatureUnitRaw) ?? .celsius
+    }
+
+    private var activeCount: Int { items.filter(\.isActive).count }
+    private var archivedCount: Int { items.count - activeCount }
+
+    private var categoryCounts: [CategoryCount] {
+        ItemCategory.allCases.map { category in
+            CategoryCount(category: category, count: items.filter { $0.category == category }.count)
+        }
+    }
+
+    /// 最常穿：按 WearLog 的 itemIDs 出现次数统计，次数相同按名称排。
+    private var mostWorn: [WornEntry] {
+        var counts: [UUID: Int] = [:]
+        for log in logs {
+            for id in log.itemIDs {
+                counts[id, default: 0] += 1
+            }
+        }
+        return counts.compactMap { id, count in
+            guard let item = items.first(where: { $0.id == id }) else { return nil }
+            return WornEntry(item: item, count: count)
+        }
+        .sorted {
+            if $0.count == $1.count { return $0.item.name < $1.item.name }
+            return $0.count > $1.count
+        }
+        .prefix(5)
+        .map { $0 }
+    }
+
+    /// 本月记录天数：按 WearLog 日期落在本月的不同「天」计数。
+    private var monthRecordDays: Int {
+        let calendar = DateText.calendar
+        let now = Date()
+        guard let month = calendar.dateInterval(of: .month, for: now) else { return 0 }
+        let days = logs.filter { month.contains($0.date) }
+            .map { calendar.startOfDay(for: $0.date) }
+        return Set(days).count
+    }
+
+    /// 连续记录天数：从今天往前数；今天还没记录时从昨天起算，避免把「今天还没记」算成断签。
+    private var streakDays: Int {
+        let calendar = DateText.calendar
+        let daySet = Set(logs.map { calendar.startOfDay(for: $0.date) })
+        var cursor = calendar.startOfDay(for: Date())
+        if !daySet.contains(cursor),
+           let yesterday = calendar.date(byAdding: .day, value: -1, to: cursor) {
+            cursor = yesterday
+        }
+        var count = 0
+        while daySet.contains(cursor) {
+            count += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+            if count > logs.count { break }
+        }
+        return count
+    }
+
+    /// 衣物照片占用：只统计当前衣物引用的沙盒图片文件。
+    private var photoBytes: Int64 {
+        items.reduce(0) { partial, item in
+            let path = ImageStore.shared.url(for: item.imageFile).path
+            let attributes = try? FileManager.default.attributesOfItem(atPath: path)
+            let size = (attributes?[.size] as? NSNumber)?.int64Value ?? 0
+            return partial + size
+        }
+    }
+
+    private var photoSizeText: String {
+        ByteCountFormatter.string(fromByteCount: photoBytes, countStyle: .file)
+    }
+
     var body: some View {
         List {
+            Section("偏好设置") {
+                Picker("温度显示", selection: $temperatureUnitRaw) {
+                    ForEach(TemperatureUnit.allCases) { unit in
+                        Text(unit.displayName).tag(unit.rawValue)
+                    }
+                }
+                Toggle("灵感先看适合今天天气", isOn: $inspirationWeatherFirst)
+                Text("关闭后，搭配灵感与今日灵感恢复普通顺序；设置只存在本机。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("穿搭统计") {
+                LabeledContent("本月记录天数", value: "\(monthRecordDays) 天")
+                LabeledContent("连续记录天数", value: "\(streakDays) 天")
+                Text("连续记录从今天往前数；今天还没记录时从昨天起算。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("衣物统计") {
+                LabeledContent("衣物总数", value: "\(items.count) 件")
+                LabeledContent("在用 / 归档", value: "\(activeCount) / \(archivedCount) 件")
+                ForEach(categoryCounts, id: \.category) { entry in
+                    LabeledContent(entry.category.rawValue, value: "\(entry.count) 件")
+                }
+                LabeledContent("照片占用", value: photoSizeText)
+            }
+
+            Section("最常穿") {
+                if mostWorn.isEmpty {
+                    Text("还没有穿搭记录。先在「今日」页点「记今日穿搭」，这里会按出现次数排出最常穿的单品。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(mostWorn, id: \.item.id) { entry in
+                        HStack(spacing: 10) {
+                            ItemThumbnail(fileName: entry.item.imageFile, size: 36)
+                            Text(entry.item.name)
+                                .lineLimit(1)
+                            Spacer()
+                            Text("\(entry.count) 次")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Text("按穿搭记录中出现次数统计；次数相同按名称排序。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section {
                 NavigationLink {
                     SettingsView()
