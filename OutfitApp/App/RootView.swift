@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 四个页面：今日 / 衣橱 / 搭配 / 日历与我的（阶段3 · 3.1）
+/// 四个页面：今日 / 衣橱 / 搭配 / 我的
 struct RootView: View {
     var body: some View {
         TabView {
@@ -20,9 +20,9 @@ struct RootView: View {
             .tabItem { Label("搭配", systemImage: "square.grid.2x2") }
 
             NavigationStack {
-                HistoryView()
+                MyView()
             }
-            .tabItem { Label("日历与我的", systemImage: "calendar") }
+            .tabItem { Label("我的", systemImage: "person.crop.circle") }
         }
         .tint(Color.accentColor)
     }
