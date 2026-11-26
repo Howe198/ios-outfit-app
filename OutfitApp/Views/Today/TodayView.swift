@@ -12,6 +12,8 @@ struct TodayView: View {
     @AppStorage("today.temperature") private var temperature: Int = 22
     @AppStorage("today.occasion") private var occasion: String = "通勤上班"
     @AppStorage("today.manualTemperature") private var manualTemperature: Bool = false
+    @AppStorage("today.hasActiveTemperature") private var hasActiveTemperature: Bool = false
+    @AppStorage("settings.inspirationWeatherFirst") private var inspirationWeatherFirst: Bool = true
 
     @State private var result: RecommendationResult?
     @State private var page = 0
@@ -23,7 +25,10 @@ struct TodayView: View {
     private var band: TempBand { TempBand.from(celsius: temperature) }
     private var todayLog: WearLog? { logs.first { Calendar.current.isDateInToday($0.date) } }
     private var todayInspirations: [StyleSample] {
-        InspirationLibrary.samples(matching: temperature, occasion: occasion, limit: 3)
+        guard inspirationWeatherFirst else {
+            return Array(InspirationLibrary.all.prefix(3))
+        }
+        return InspirationLibrary.samples(matching: temperature, occasion: occasion, limit: 3)
     }
     private var isWeekend: Bool {
         let weekday = DateText.calendar.component(.weekday, from: Date())
@@ -66,11 +71,15 @@ struct TodayView: View {
         .navigationTitle("今日")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            if manualTemperature { hasActiveTemperature = true }
             if case .idle = weatherPhase, !manualTemperature {
                 await refreshWeather()
             }
             if !occasionLocked { occasion = autoOccasion }
             if result == nil { generate() }
+        }
+        .onChange(of: temperature) { _, _ in
+            hasActiveTemperature = true
         }
         .alert("提示", isPresented: alertBinding) {
             Button("好", role: .cancel) {}
@@ -148,6 +157,7 @@ struct TodayView: View {
                     }
                     Button("改用手动温度") {
                         manualTemperature = true
+                        hasActiveTemperature = true
                         weatherPhase = .idle
                     }
                     Spacer()
@@ -166,6 +176,7 @@ struct TodayView: View {
                     }
                     Button("手动填温度") {
                         manualTemperature = true
+                        hasActiveTemperature = true
                         weatherPhase = .idle
                     }
                 }
@@ -452,10 +463,12 @@ struct TodayView: View {
             weatherPhase = .loaded(snapshot)
             temperature = snapshot.temperature
             manualTemperature = false
+            hasActiveTemperature = true
             if result != nil { generate() }
         } catch {
             weatherPhase = .failed(error.localizedDescription)
             manualTemperature = true
+            hasActiveTemperature = true
         }
     }
 

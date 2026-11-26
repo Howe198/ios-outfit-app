@@ -34,11 +34,21 @@ struct OutfitTabView: View {
 
 private struct InspirationGallerySection: View {
     @State private var selected: StyleSample?
+    @AppStorage("settings.inspirationWeatherFirst") private var weatherFirst = true
+    @AppStorage("today.temperature") private var temperature = 22
+    @AppStorage("today.hasActiveTemperature") private var hasActiveTemperature = false
 
     private let columns = [
         GridItem(.flexible(minimum: 0), spacing: 12),
         GridItem(.flexible(minimum: 0), spacing: 12)
     ]
+
+    private var section: InspirationSection {
+        InspirationLibrary.section(
+            temperature: hasActiveTemperature ? temperature : nil,
+            weatherFirst: weatherFirst
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -47,15 +57,28 @@ private struct InspirationGallerySection: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(InspirationLibrary.all) { sample in
-                        Button {
-                            selected = sample
-                        } label: {
-                            StyleSampleCard(sample: sample)
-                        }
-                        .buttonStyle(.plain)
+                if weatherFirst && !section.featured.isEmpty {
+                    sectionTitle(
+                        section.usesTemperature
+                            ? "适合今天 · \(section.temperature ?? temperature)℃"
+                            : "适合本季",
+                        count: section.featured.count
+                    )
+                    grid(section.featured, badge: section.usesTemperature ? "适合今天" : "适合本季")
+
+                    if !section.remaining.isEmpty {
+                        Text("其他灵感")
+                            .font(.subheadline).bold()
+                            .padding(.top, 4)
+                        grid(section.remaining, badge: "灵感")
                     }
+                } else {
+                    if weatherFirst && section.usesTemperature && section.featured.isEmpty {
+                        Text("今天没有完全落在温度区间的示例，下面按接近温度排序。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    grid(section.remaining, badge: "灵感")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -66,17 +89,51 @@ private struct InspirationGallerySection: View {
             StyleSampleDetailView(sample: sample)
         }
     }
+
+    private func sectionTitle(_ text: String, count: Int) -> some View {
+        HStack(spacing: 8) {
+            Text(text)
+                .font(.subheadline).bold()
+            Text("\(count) 条")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
+    private func grid(_ samples: [StyleSample], badge: String) -> some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(samples) { sample in
+                Button {
+                    selected = sample
+                } label: {
+                    StyleSampleCard(sample: sample, badgeText: badge)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 }
 
 /// 今日页与搭配页共用的灵感网格（只读）。
 struct InspirationGalleryView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selected: StyleSample?
+    @AppStorage("settings.inspirationWeatherFirst") private var weatherFirst = true
+    @AppStorage("today.temperature") private var temperature = 22
+    @AppStorage("today.hasActiveTemperature") private var hasActiveTemperature = false
 
     private let columns = [
         GridItem(.flexible(minimum: 0), spacing: 12),
         GridItem(.flexible(minimum: 0), spacing: 12)
     ]
+
+    private var section: InspirationSection {
+        InspirationLibrary.section(
+            temperature: hasActiveTemperature ? temperature : nil,
+            weatherFirst: weatherFirst
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -86,15 +143,28 @@ struct InspirationGalleryView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(InspirationLibrary.all) { sample in
-                            Button {
-                                selected = sample
-                            } label: {
-                                StyleSampleCard(sample: sample)
-                            }
-                            .buttonStyle(.plain)
+                    if weatherFirst && !section.featured.isEmpty {
+                        sectionTitle(
+                            section.usesTemperature
+                                ? "适合今天 · \(section.temperature ?? temperature)℃"
+                                : "适合本季",
+                            count: section.featured.count
+                        )
+                        grid(section.featured, badge: section.usesTemperature ? "适合今天" : "适合本季")
+
+                        if !section.remaining.isEmpty {
+                            Text("其他灵感")
+                                .font(.subheadline).bold()
+                                .padding(.top, 4)
+                            grid(section.remaining, badge: "灵感")
                         }
+                    } else {
+                        if weatherFirst && section.usesTemperature && section.featured.isEmpty {
+                            Text("今天没有完全落在温度区间的示例，下面按接近温度排序。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        grid(section.remaining, badge: "灵感")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -114,10 +184,35 @@ struct InspirationGalleryView: View {
             }
         }
     }
+
+    private func sectionTitle(_ text: String, count: Int) -> some View {
+        HStack(spacing: 8) {
+            Text(text)
+                .font(.subheadline).bold()
+            Text("\(count) 条")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
+    private func grid(_ samples: [StyleSample], badge: String) -> some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(samples) { sample in
+                Button {
+                    selected = sample
+                } label: {
+                    StyleSampleCard(sample: sample, badgeText: badge)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 }
 
 struct StyleSampleCard: View {
     let sample: StyleSample
+    var badgeText: String = "灵感"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -131,7 +226,7 @@ struct StyleSampleCard: View {
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                Text("灵感")
+                Text(badgeText)
                     .font(.caption2)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
