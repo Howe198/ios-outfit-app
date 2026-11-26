@@ -81,7 +81,7 @@ struct SettingsView: View {
             }
 
             Section("关于") {
-                Text("数据只存在本机 App 沙盒，不上传任何服务器；天气只向免费 Open-Meteo 请求当前气温（位置不保存、不上传），不做付费识别、不做自动抓取。")
+                Text("衣物照片、穿搭记录只存在本机 App 沙盒；天气查询会把坐标发送给免费 Open-Meteo 获取气温、发送给 Apple CLGeocoder 反查城市名，不会保存到任何自建服务器；不做付费识别、不做自动抓取。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text("全程零费用：仅使用系统自带能力与本机存储。真机安装走免费个人签名，到期需连 Mac 重签。")
