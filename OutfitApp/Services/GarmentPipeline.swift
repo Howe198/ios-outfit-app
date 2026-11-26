@@ -91,11 +91,11 @@ enum GarmentPipeline {
 
     static func process(_ image: UIImage) async -> PipelineOutcome {
         await Task.detached(priority: .userInitiated) {
-            processSync(image)
+            await processSync(image)
         }.value
     }
 
-    private static func processSync(_ image: UIImage) -> PipelineOutcome {
+    private static func processSync(_ image: UIImage) async -> PipelineOutcome {
         let source = resized(normalizedImage(image), maxSide: 2560)
         guard let cgImage = source.cgImage else {
             return PipelineOutcome(candidates: [], message: "图片读取失败，已保留原图。")
@@ -136,7 +136,7 @@ enum GarmentPipeline {
         if let fullRect = joints.fullRect(in: sourceExtent),
            let fullCutout = cutout(source: sourceCIImage, mask: personMask, region: fullRect, extent: sourceExtent, context: ciContext),
            hasContent(fullCutout) {
-            let guess = ClothingVision.recognize(fullCutout)
+            let guess = await ClothingVision.recognize(fullCutout)
             if guess.category == .dress {
                 let flattened = flatten(fullCutout, part: .dress)
                 return PipelineOutcome(candidates: [
@@ -155,7 +155,7 @@ enum GarmentPipeline {
         if let upperRect = joints.upperRect(in: sourceExtent),
            let cutoutImage = cutout(source: sourceCIImage, mask: personMask, region: upperRect, extent: sourceExtent, context: ciContext),
            hasContent(cutoutImage) {
-            let guess = ClothingVision.recognize(cutoutImage, categoryHint: .top)
+            let guess = await ClothingVision.recognize(cutoutImage, categoryHint: .top)
             let category = resolvedCategory(guess.category, prior: .top)
             candidates.append(
                 GarmentCandidate(
@@ -170,7 +170,7 @@ enum GarmentPipeline {
         if let lowerRect = joints.lowerRect(in: sourceExtent),
            let cutoutImage = cutout(source: sourceCIImage, mask: personMask, region: lowerRect, extent: sourceExtent, context: ciContext),
            hasContent(cutoutImage) {
-            let guess = ClothingVision.recognize(cutoutImage, categoryHint: .bottom)
+            let guess = await ClothingVision.recognize(cutoutImage, categoryHint: .bottom)
             let category = resolvedCategory(guess.category, prior: .bottom)
             candidates.append(
                 GarmentCandidate(
@@ -501,13 +501,12 @@ private struct Joints {
         let knees = [point(.leftKnee), point(.rightKnee)].compactMap { $0 }
         let ankles = [point(.leftAnkle), point(.rightAnkle)].compactMap { $0 }
         let bottomPoints = ankles.isEmpty ? knees : ankles
-        guard let bottom = bottomPoints.min(by: { $0.location.y < $1.location.y }) else { return nil }
-        let bottomLocation = bottom.location
+        guard let bottom = bottomPoints.min(by: { $0.y < $1.y }) else { return nil }
 
-        let xMin = min(leftHip.x, rightHip.x, bottomLocation.x) - 0.1
-        let xMax = max(leftHip.x, rightHip.x, bottomLocation.x) + 0.1
+        let xMin = min(leftHip.x, rightHip.x, bottom.x) - 0.1
+        let xMax = max(leftHip.x, rightHip.x, bottom.x) + 0.1
         let top = max(leftHip.y, rightHip.y) + 0.03
-        let yBottom = bottomLocation.y - 0.03
+        let yBottom = bottom.y - 0.03
         return normalizedRect(xMin: xMin, xMax: xMax, yBottom: yBottom, yTop: top, extent: extent)
     }
 
@@ -520,14 +519,13 @@ private struct Joints {
         let knees = [point(.leftKnee), point(.rightKnee)].compactMap { $0 }
         let ankles = [point(.leftAnkle), point(.rightAnkle)].compactMap { $0 }
         let bottoms = ankles.isEmpty ? knees : ankles
-        guard let bottom = bottoms.min(by: { $0.location.y < $1.location.y }) else { return nil }
-        let bottomLocation = bottom.location
+        guard let bottom = bottoms.min(by: { $0.y < $1.y }) else { return nil }
         let xMin = min(leftShoulder.x, rightShoulder.x, leftHip.x, rightHip.x) - 0.1
         let xMax = max(leftShoulder.x, rightShoulder.x, leftHip.x, rightHip.x) + 0.1
         return normalizedRect(
             xMin: xMin,
             xMax: xMax,
-            yBottom: bottomLocation.y - 0.03,
+            yBottom: bottom.y - 0.03,
             yTop: neck.y + 0.03,
             extent: extent
         )
