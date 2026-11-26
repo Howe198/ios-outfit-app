@@ -14,9 +14,10 @@ struct ClothingGuess {
 enum ClothingVision {
 
     /// 识别衣物品类与主色；失败返回空结果，由界面回落到手动填写。
-    static func recognize(_ image: UIImage) async -> ClothingGuess {
+    /// categoryHint 只在自动分类没有结果时兜底（例如已按姿态确定是上装区域）。
+    static func recognize(_ image: UIImage, categoryHint: ItemCategory? = nil) async -> ClothingGuess {
         await Task.detached(priority: .userInitiated) {
-            analyze(image)
+            analyze(image, categoryHint: categoryHint)
         }.value
     }
 
@@ -30,9 +31,11 @@ enum ClothingVision {
 
     // MARK: - 识别
 
-    private static func analyze(_ image: UIImage) -> ClothingGuess {
+    private static func analyze(_ image: UIImage, categoryHint: ItemCategory?) -> ClothingGuess {
         let normalized = normalizedImage(image)
-        guard let cgImage = normalized.cgImage else {
+        let classificationImage = compositedOnWhite(normalized)
+        guard let cgImage = classificationImage.cgImage,
+              let originalCGImage = normalized.cgImage else {
             return ClothingGuess(category: nil, colorName: nil, matchedLabel: nil)
         }
 
@@ -54,8 +57,19 @@ enum ClothingVision {
         } catch {
             // 识别失败不阻塞录入
         }
+        if category == nil { category = categoryHint }
 
-        let colorName = dominantColorName(in: cgImage)
+        let supportsAlpha: Bool
+        switch originalCGImage.alphaInfo {
+        case .premultipliedLast, .last, .premultipliedFirst, .first:
+            supportsAlpha = true
+        default:
+            supportsAlpha = false
+        }
+        let colorName = supportsAlpha
+            ? (dominantColorName(in: originalCGImage, alphaOnly: true)
+                ?? dominantColorName(in: originalCGImage, alphaOnly: false))
+            : dominantColorName(in: originalCGImage, alphaOnly: false)
         return ClothingGuess(category: category, colorName: colorName, matchedLabel: matchedLabel)
     }
 
@@ -127,8 +141,8 @@ enum ClothingVision {
     // MARK: - 主色
 
     /// 取画面中心区域的像素，剔除与四角背景相近的颜色，再映射到 12 个常用色名。
-    /// 只是近似值，界面会提示用户自行修改。
-    private static func dominantColorName(in cgImage: CGImage) -> String? {
+    /// alphaOnly 时只统计非透明衣物像素，用于分割后的衣物图，避免背景色干扰。
+    private static func dominantColorName(in cgImage: CGImage, alphaOnly: Bool) -> String? {
         let side = 48
         var pixels = [UInt8](repeating: 0, count: side * side * 4)
         guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
@@ -147,6 +161,25 @@ enum ClothingVision {
                   ) else { return }
             context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
             let bytes = base.assumingMemoryBound(to: UInt8.self)
+
+            if alphaOnly {
+                var sumR = 0.0, sumG = 0.0, sumB = 0.0, count = 0.0
+                for y in 0..<side {
+                    for x in 0..<side {
+                        let offset = (y * side + x) * 4
+                        let alpha = Double(bytes[offset + 3]) / 255.0
+                        guard alpha > 0.5 else { continue }
+                        sumR += Double(bytes[offset]) / 255.0
+                        sumG += Double(bytes[offset + 1]) / 255.0
+                        sumB += Double(bytes[offset + 2]) / 255.0
+                        count += 1
+                    }
+                }
+                if count >= 30 {
+                    averaged = (sumR / count, sumG / count, sumB / count)
+                }
+                return
+            }
 
             // 四角各取 4×4 小块，估算背景色
             var bgR = 0.0, bgG = 0.0, bgB = 0.0, bgCount = 0.0
@@ -266,6 +299,19 @@ enum ClothingVision {
             return UIImage(cgImage: output)
         } catch {
             return nil
+        }
+    }
+
+    /// 分类前把透明区域合成到白底，避免透明像素被 Vision 当成黑色背景。
+    private static func compositedOnWhite(_ image: UIImage) -> UIImage {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = image.scale
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        return renderer.image { context in
+            context.cgContext.setFillColor(UIColor.white.cgColor)
+            context.cgContext.fill(CGRect(origin: .zero, size: image.size))
+            image.draw(in: CGRect(origin: .zero, size: image.size))
         }
     }
 

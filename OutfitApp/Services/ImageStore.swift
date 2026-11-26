@@ -37,11 +37,12 @@ final class ImageStore {
         !name.isEmpty && fileManager.fileExists(atPath: url(for: name).path)
     }
 
-    /// 保存照片数据，返回沙盒内的文件名。会统一压到最长边 1600px 的 JPEG，控制体积。
+    /// 保存照片数据，返回沙盒内的文件名。保真优先：最长边 2560px、JPEG 质量 0.9。
     @discardableResult
     func save(data: Data, name: String? = nil) throws -> String {
         prepare()
-        guard let normalized = Self.normalizedJPEG(data) else {
+        guard let image = UIImage(data: data),
+              let normalized = Self.normalizedJPEG(image) else {
             throw BackupError.imageUnreadable
         }
         let fileName = name ?? (UUID().uuidString + ".jpg")
@@ -49,11 +50,23 @@ final class ImageStore {
         return fileName
     }
 
-    /// 保存抠图结果：透明 PNG，最长边 1000px，尽量控制体积。
+    /// 直接保存已处理/已增强的 UIImage（走同一套高清口径）。
+    @discardableResult
+    func save(image: UIImage, name: String? = nil) throws -> String {
+        prepare()
+        guard let normalized = Self.normalizedJPEG(image) else {
+            throw BackupError.imageUnreadable
+        }
+        let fileName = name ?? (UUID().uuidString + ".jpg")
+        try normalized.write(to: url(for: fileName), options: .atomic)
+        return fileName
+    }
+
+    /// 保存抠图结果：透明 PNG，最长边 1800px（分割在高分辨率下执行后再缩放）。
     @discardableResult
     func saveCutout(_ image: UIImage, name: String? = nil) throws -> String {
         prepare()
-        guard let normalized = Self.normalizedPNG(image, maxSide: 1000) else {
+        guard let normalized = Self.normalizedPNG(image, maxSide: 1800) else {
             throw BackupError.imageUnreadable
         }
         let fileName = name ?? (UUID().uuidString + ".png")
@@ -104,8 +117,12 @@ final class ImageStore {
         prepare()
     }
 
-    static func normalizedJPEG(_ data: Data, maxSide: CGFloat = 1600, quality: CGFloat = 0.82) -> Data? {
+    static func normalizedJPEG(_ data: Data, maxSide: CGFloat = 2560, quality: CGFloat = 0.9) -> Data? {
         guard let image = UIImage(data: data) else { return nil }
+        return normalizedJPEG(image, maxSide: maxSide, quality: quality)
+    }
+
+    static func normalizedJPEG(_ image: UIImage, maxSide: CGFloat = 2560, quality: CGFloat = 0.9) -> Data? {
         let longest = max(image.size.width, image.size.height)
         var target = image
         if longest > maxSide {
