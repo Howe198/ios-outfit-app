@@ -34,6 +34,7 @@
 	B10000000000000000000025 /* RulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000025 /* RulesView.swift */; };
 	B10000000000000000000026 /* VocabularyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000026 /* VocabularyView.swift */; };
 	B10000000000000000000027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000027 /* Assets.xcassets */; };
+	B10000000000000000000029 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000029 /* WeatherService.swift */; };
 	/* End PBXBuildFile section */
 
 	/* Begin PBXFileReference section */
@@ -64,6 +65,7 @@
 	F10000000000000000000025 /* RulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesView.swift; sourceTree = "<group>"; };
 	F10000000000000000000026 /* VocabularyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyView.swift; sourceTree = "<group>"; };
 	F10000000000000000000027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+	F10000000000000000000029 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 	F10000000000000000000028 /* OutfitApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutfitApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 	/* End PBXFileReference section */
 
@@ -127,6 +129,7 @@
 		F10000000000000000000011 /* BackupService.swift */,
 		F10000000000000000000012 /* RecommendationEngine.swift */,
 		F10000000000000000000013 /* VocabularyStore.swift */,
+		F10000000000000000000029 /* WeatherService.swift */,
 		);
 		path = Services;
 		sourceTree = "<group>";
@@ -312,6 +315,7 @@
 		B10000000000000000000024 /* SettingsView.swift in Sources */,
 		B10000000000000000000025 /* RulesView.swift in Sources */,
 		B10000000000000000000026 /* VocabularyView.swift in Sources */,
+		B10000000000000000000029 /* WeatherService.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -374,6 +378,7 @@
 			INFOPLIST_KEY_CFBundleDisplayName = "衣橱穿搭";
 			INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 			INFOPLIST_KEY_NSCameraUsageDescription = "拍摄衣物照片，照片只保存在本机。";
+			INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "仅用于获取当前气温来生成今日推荐，位置不保存、不上传。";
 			INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "从相册选择衣物照片，照片只保存在本机。";
 			INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 			INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -407,6 +412,7 @@
 			INFOPLIST_KEY_CFBundleDisplayName = "衣橱穿搭";
 			INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 			INFOPLIST_KEY_NSCameraUsageDescription = "拍摄衣物照片，照片只保存在本机。";
+			INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "仅用于获取当前气温来生成今日推荐，位置不保存、不上传。";
 			INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "从相册选择衣物照片，照片只保存在本机。";
 			INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 			INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
