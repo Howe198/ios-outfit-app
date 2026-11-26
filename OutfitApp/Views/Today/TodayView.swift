@@ -111,7 +111,7 @@ struct TodayView: View {
             }
             .buttonStyle(.borderedProminent)
 
-            Text("定位只用于这次天气请求，位置不保存、不上传；断网或没有权限时可手动填温度，推荐照常生成。")
+            Text("定位只用于获取当地天气；坐标会发送给 Open-Meteo 查询气温、发送给 Apple CLGeocoder 反查城市名，不会保存到任何自建服务器。断网或没有权限时可手动填温度，推荐照常生成。")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
