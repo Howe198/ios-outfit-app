@@ -15,9 +15,13 @@ struct TodayView: View {
     @State private var result: RecommendationResult?
     @State private var page = 0
     @State private var message: String?
+    @State private var showInspirations = false
 
     private var band: TempBand { TempBand.from(celsius: temperature) }
     private var todayLog: WearLog? { logs.first { Calendar.current.isDateInToday($0.date) } }
+    private var todayInspirations: [StyleSample] {
+        InspirationLibrary.samples(matching: temperature, occasion: occasion, limit: 3)
+    }
 
     private var pageItems: [RecommendedOutfit] {
         guard let result = result else { return [] }
@@ -36,6 +40,7 @@ struct TodayView: View {
                     recordedCard(todayLog)
                 }
                 recommendationSection
+                inspirationSection
             }
             .padding(16)
         }
@@ -43,7 +48,7 @@ struct TodayView: View {
         .navigationTitle("今日")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            if result == nil && !items.isEmpty {
+            if result == nil {
                 generate()
             }
         }
@@ -179,6 +184,66 @@ struct TodayView: View {
                     .foregroundStyle(.secondary)
             }
             .cardBackground()
+        }
+    }
+
+    // MARK: - 今日灵感
+
+    @ViewBuilder
+    private var inspirationSection: some View {
+        let samples = todayInspirations
+        if !samples.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("今日灵感")
+                        .font(.headline)
+                    Text("\(band.rawValue) · \(band.hint)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("查看全部") { showInspirations = true }
+                        .font(.subheadline)
+                }
+
+                Text("内置示例搭配，只作参考，不代表你已有这些衣物。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(samples) { sample in
+                            Button {
+                                showInspirations = true
+                            } label: {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    StyleSampleImage(sample: sample)
+                                        .frame(width: 140, height: 168)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    HStack(spacing: 4) {
+                                        Text("灵感")
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.accentColor.opacity(0.15), in: Capsule())
+                                        Text(sample.tempText)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Text(sample.title)
+                                        .font(.caption)
+                                        .lineLimit(1)
+                                        .frame(width: 140, alignment: .leading)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .cardBackground()
+            .sheet(isPresented: $showInspirations) {
+                InspirationGalleryView()
+            }
         }
     }
 
