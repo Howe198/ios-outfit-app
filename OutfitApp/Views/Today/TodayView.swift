@@ -14,6 +14,11 @@ struct TodayView: View {
     @AppStorage("today.manualTemperature") private var manualTemperature: Bool = false
     @AppStorage("today.hasActiveTemperature") private var hasActiveTemperature: Bool = false
     @AppStorage("settings.inspirationWeatherFirst") private var inspirationWeatherFirst: Bool = true
+    @AppStorage("settings.temperatureUnit") private var temperatureUnitRaw = TemperatureUnit.celsius.rawValue
+
+    private var temperatureUnit: TemperatureUnit {
+        TemperatureUnit(rawValue: temperatureUnitRaw) ?? .celsius
+    }
 
     @State private var result: RecommendationResult?
     @State private var page = 0
@@ -147,7 +152,7 @@ struct TodayView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text("\(snapshot.cityName ?? "当前位置") \(snapshot.temperature)℃")
+                    Text("\(snapshot.cityName ?? "当前位置") \(temperatureUnit.text(fromCelsius: snapshot.temperature))")
                         .font(.headline)
                         .monospacedDigit()
                 }
@@ -193,7 +198,7 @@ struct TodayView: View {
                             .foregroundStyle(.secondary)
                         Spacer()
                         Stepper(value: $temperature, in: -20...45, step: 1) {
-                            Text("\(temperature)℃")
+                            Text(temperatureUnit.text(fromCelsius: temperature))
                                 .font(.headline)
                                 .monospacedDigit()
                         }

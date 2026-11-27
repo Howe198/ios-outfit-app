@@ -81,6 +81,33 @@ enum TempBand: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+// MARK: - 温度显示单位
+/// 内部计算始终用摄氏；这里只决定界面显示口径。
+enum TemperatureUnit: String, CaseIterable, Identifiable, Codable {
+    case celsius = "°C"
+    case fahrenheit = "°F"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .celsius: return "摄氏（°C）"
+        case .fahrenheit: return "华氏（°F）"
+        }
+    }
+
+    func value(fromCelsius celsius: Int) -> Int {
+        switch self {
+        case .celsius: return celsius
+        case .fahrenheit: return Int((Double(celsius) * 9.0 / 5.0 + 32.0).rounded())
+        }
+    }
+
+    func text(fromCelsius celsius: Int) -> String {
+        "\(value(fromCelsius: celsius))\(rawValue)"
+    }
+}
+
 // MARK: - 搭配来源
 enum OutfitSource: String, CaseIterable, Codable {
     case manual = "手动"
